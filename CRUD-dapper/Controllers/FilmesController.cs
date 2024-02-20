@@ -6,7 +6,7 @@ namespace CRUD_dapper.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class FilmesController : Controller
+public class FilmesController : ControllerBase
 {
     private readonly IFilmeRepository _filmeRepository;
 
@@ -25,6 +25,24 @@ public class FilmesController : Controller
     public async Task<IActionResult> GetById(int id)
     {
         FilmeResponse filme = await _filmeRepository.BuscaFilmeAsync(id);
-        return Ok(filme is not null ? Ok(filme) : NotFound("Filme não encontrado."));
+        return Ok(filme is not null ?
+            Ok(filme) :
+            NotFound("Filme não encontrado."));
+    }
+    [HttpPost]
+    public async Task<IActionResult> Post(FilmeRequest request)
+    {
+        try
+        {
+            if (!request.EhValido()) return BadRequest("Informações inválidas");
+
+            return await _filmeRepository.AdicionarAsync(request) ?
+                Ok("Filme adicionado com sucesso.") :
+                BadRequest("Erro ao adicionar filme.");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 }

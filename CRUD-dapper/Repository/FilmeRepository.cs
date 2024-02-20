@@ -13,14 +13,26 @@ public class FilmeRepository : IFilmeRepository
         _configuration = configuration;
         connectionString = _configuration.GetConnectionString("FilmesContext");
     }
-    public Task<bool> AdicionarAsync(FilmeRequest request)
+    public async Task<bool> AdicionarAsync(FilmeRequest request)
     {
-        throw new NotImplementedException();
+        try
+        {
+            string sql = @"INSERT INTO dbo.Filmes (nome, ano, produtoraid) 
+                       VALUES (@Nome, @Ano, @ProdutoraId)";
+            using var con = new SqlConnection(connectionString);
+            return await con.ExecuteAsync(sql, request) > 0;
+        }
+        catch (SqlException)
+        {
+            throw new Exception("Não existe essa produtora no banco de dados.");
+        }
     }
 
-    public Task<bool> AtualizarAsync(FilmeRequest request, int id)
+    public async Task<bool> AtualizarAsync(FilmeRequest request, int id)
     {
-        throw new NotImplementedException();
+        string sql = @"";
+        using var con = new SqlConnection(connectionString);
+        return await con.ExecuteAsync(sql, request) > 0;
     }
 
     public async Task<FilmeResponse> BuscaFilmeAsync(int id)
