@@ -45,4 +45,23 @@ public class FilmesController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Put(FilmeRequest request, int id)
+    {
+        try
+        {
+            if (id <= 0) throw new Exception("Filme inválido.");
+            FilmeResponse filme = await _filmeRepository.BuscaFilmeAsync(id);
+
+            request.Atualizar(filme);
+
+            return await _filmeRepository.AtualizarAsync(request, id) ?
+                Ok("Filme atualizado com sucesso.") :
+                BadRequest("Erro ao atualizar filme.");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }

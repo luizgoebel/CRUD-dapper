@@ -30,22 +30,49 @@ public class FilmeRepository : IFilmeRepository
 
     public async Task<bool> AtualizarAsync(FilmeRequest request, int id)
     {
-        string sql = @"";
-        using var con = new SqlConnection(connectionString);
-        return await con.ExecuteAsync(sql, request) > 0;
+        try
+        {
+            string sql = @"
+                            UPDATE dbo.Filmes 
+                            SET nome = @Nome, 
+                                ano = @Ano
+                            WHERE id = @Id";
+
+
+            DynamicParameters parametros = new();
+            parametros.Add("Nome", request.Nome);
+            parametros.Add("Ano", request.Ano);
+            parametros.Add("Id", id);
+
+            using var con = new SqlConnection(connectionString);
+            return await con.ExecuteAsync(sql, parametros) > 0;
+        }
+        catch (Exception)
+        {
+            throw;
+        }
     }
 
     public async Task<FilmeResponse> BuscaFilmeAsync(int id)
     {
-        string sql = @"
+        try
+        {
+            string sql = @"
     SELECT f.id Id,
        f.nome Nome,
        f.ano Ano,
        p.nome Produtora
     FROM dbo.Filmes f
-    JOIN dbo.Produtora p on f.ProdutoraId = @Id";
-        using var con = new SqlConnection(connectionString);
-        return await con.QueryFirstOrDefaultAsync<FilmeResponse>(sql, new { Id = id });
+    JOIN dbo.Produtora p on f.ProdutoraId = p.id
+    WHERE f.id = @Id";
+            using var con = new SqlConnection(connectionString);
+            return await con.QueryFirstOrDefaultAsync<FilmeResponse>(sql, new { Id = id });
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
     }
 
     public async Task<IEnumerable<FilmeResponse>> BuscaFilmesAsync()
