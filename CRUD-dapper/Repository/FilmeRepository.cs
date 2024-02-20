@@ -17,14 +17,19 @@ public class FilmeRepository : IFilmeRepository
     {
         try
         {
+            if (!request.EhValido())
+                throw new Exception("Informações inválidas");
+
             string sql = @"INSERT INTO dbo.Filmes (nome, ano, produtoraid) 
                        VALUES (@Nome, @Ano, @ProdutoraId)";
             using var con = new SqlConnection(connectionString);
-            return await con.ExecuteAsync(sql, request) > 0;
+
+            return await con.ExecuteAsync(sql, request) <= 0 ?
+                throw new Exception("Não foi possível adicionar o filme") : true;
         }
-        catch (SqlException)
+        catch (Exception)
         {
-            throw new Exception("Não existe essa produtora no banco de dados.");
+            throw;
         }
     }
 
@@ -37,15 +42,15 @@ public class FilmeRepository : IFilmeRepository
                             SET nome = @Nome, 
                                 ano = @Ano
                             WHERE id = @Id";
-
+            using var con = new SqlConnection(connectionString);
 
             DynamicParameters parametros = new();
             parametros.Add("Nome", request.Nome);
             parametros.Add("Ano", request.Ano);
             parametros.Add("Id", id);
 
-            using var con = new SqlConnection(connectionString);
-            return await con.ExecuteAsync(sql, parametros) > 0;
+            return await con.ExecuteAsync(sql, parametros) <= 0 ?
+                throw new Exception("Não foi possível atualizar o filme") : true;
         }
         catch (Exception)
         {
@@ -57,39 +62,62 @@ public class FilmeRepository : IFilmeRepository
     {
         try
         {
+            if (id <= 0) throw new Exception("Filme inválido.");
+
             string sql = @"
-    SELECT f.id Id,
-       f.nome Nome,
-       f.ano Ano,
-       p.nome Produtora
-    FROM dbo.Filmes f
-    JOIN dbo.Produtora p on f.ProdutoraId = p.id
-    WHERE f.id = @Id";
+                            SELECT f.id Id,
+                               f.nome Nome,
+                               f.ano Ano,
+                               p.nome Produtora
+                            FROM dbo.Filmes f
+                            JOIN dbo.Produtora p on f.ProdutoraId = p.id
+                            WHERE f.id = @Id";
             using var con = new SqlConnection(connectionString);
-            return await con.QueryFirstOrDefaultAsync<FilmeResponse>(sql, new { Id = id });
+
+            return await con.QueryFirstOrDefaultAsync<FilmeResponse>(sql, new { Id = id }) ??
+                throw new Exception("Filme não existe.");
         }
         catch (Exception)
         {
-
             throw;
         }
     }
 
     public async Task<IEnumerable<FilmeResponse>> BuscaFilmesAsync()
     {
-        string sql = @"
-    SELECT f.id Id,
-       f.nome Nome,
-       f.ano Ano,
-       p.nome Produtora
-    FROM dbo.Filmes f
-    JOIN dbo.Produtora p on f.ProdutoraId = p.Id";
-        using var con = new SqlConnection(connectionString);
-        return await con.QueryAsync<FilmeResponse>(sql);
+        try
+        {
+            string sql = @"
+                            SELECT f.id Id,
+                               f.nome Nome,
+                               f.ano Ano,
+                               p.nome Produtora
+                            FROM dbo.Filmes f
+                            JOIN dbo.Produtora p on f.ProdutoraId = p.Id";
+            using var con = new SqlConnection(connectionString);
+
+            return await con.QueryAsync<FilmeResponse>(sql) ??
+                Enumerable.Empty<FilmeResponse>();
+        }
+        catch (Exception)
+        {
+            throw;
+        }
     }
 
-    public Task<bool> DeletarFilmeAsync(int id)
+    public async Task<bool> DeletarFilmeAsync(int id)
     {
-        throw new NotImplementedException();
+        try
+        {
+            string sql = @"DELETE FROM dbo.Filmes WHERE f.id = @Id";
+            using var con = new SqlConnection(connectionString);
+
+            return await con.ExecuteAsync(sql, new { Id = id }) <= 0 ?
+                throw new Exception("Erro ao deletar filme.") : true;
+        }
+        catch (Exception)
+        {
+            throw;
+        }
     }
 }

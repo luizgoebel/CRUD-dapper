@@ -18,27 +18,26 @@ public class FilmesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        IEnumerable<FilmeResponse> filmes = await _filmeRepository.BuscaFilmesAsync();
-        return Ok(filmes.Any() ? filmes : NoContent());
+        return Ok(await _filmeRepository.BuscaFilmesAsync());
     }
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        FilmeResponse filme = await _filmeRepository.BuscaFilmeAsync(id);
-        return Ok(filme is not null ?
-            Ok(filme) :
-            NotFound("Filme não encontrado."));
+        try
+        {
+            return Ok(_filmeRepository.BuscaFilmeAsync(id));
+        }
+        catch (Exception)
+        {
+            throw;
+        }
     }
     [HttpPost]
     public async Task<IActionResult> Post(FilmeRequest request)
     {
         try
         {
-            if (!request.EhValido()) return BadRequest("Informações inválidas");
-
-            return await _filmeRepository.AdicionarAsync(request) ?
-                Ok("Filme adicionado com sucesso.") :
-                BadRequest("Erro ao adicionar filme.");
+            return Ok(await _filmeRepository.AdicionarAsync(request));
         }
         catch (Exception ex)
         {
@@ -50,17 +49,28 @@ public class FilmesController : ControllerBase
     {
         try
         {
-            if (id <= 0) throw new Exception("Filme inválido.");
             FilmeResponse filme = await _filmeRepository.BuscaFilmeAsync(id);
-
             request.Atualizar(filme);
 
-            return await _filmeRepository.AtualizarAsync(request, id) ?
-                Ok("Filme atualizado com sucesso.") :
-                BadRequest("Erro ao atualizar filme.");
+            return Ok(await _filmeRepository.AtualizarAsync(request, id));
         }
         catch (Exception ex)
         {
+            return BadRequest(ex.Message);
+        }
+    }
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        try
+        {
+            FilmeResponse filme = await _filmeRepository.BuscaFilmeAsync(id);
+
+            return Ok(await _filmeRepository.DeletarFilmeAsync(id));
+        }
+        catch (Exception ex)
+        {
+
             return BadRequest(ex.Message);
         }
     }
