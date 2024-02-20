@@ -13,7 +13,7 @@ public class FilmeRepository : IFilmeRepository
         _configuration = configuration;
         connectionString = _configuration.GetConnectionString("FilmesContext");
     }
-    public async Task<bool> AdicionarAsync(FilmeRequest request)
+    public async Task<string> AdicionarAsync(FilmeRequest request)
     {
         try
         {
@@ -25,7 +25,7 @@ public class FilmeRepository : IFilmeRepository
             using var con = new SqlConnection(connectionString);
 
             return await con.ExecuteAsync(sql, request) <= 0 ?
-                throw new Exception("Não foi possível adicionar o filme") : true;
+                throw new Exception("Não foi possível adicionar o filme") : "Adicionado com sucesso";
         }
         catch (Exception)
         {
@@ -33,10 +33,13 @@ public class FilmeRepository : IFilmeRepository
         }
     }
 
-    public async Task<bool> AtualizarAsync(FilmeRequest request, int id)
+    public async Task<string> AtualizarAsync(FilmeRequest request, int id)
     {
         try
         {
+            FilmeResponse filme = await BuscaFilmeAsync(id);
+            request.Atualizar(filme);
+
             string sql = @"
                             UPDATE dbo.Filmes 
                             SET nome = @Nome, 
@@ -50,7 +53,7 @@ public class FilmeRepository : IFilmeRepository
             parametros.Add("Id", id);
 
             return await con.ExecuteAsync(sql, parametros) <= 0 ?
-                throw new Exception("Não foi possível atualizar o filme") : true;
+                throw new Exception("Não foi possível atualizar o filme") : "Atualizado com sucesso";
         }
         catch (Exception)
         {
@@ -74,8 +77,7 @@ public class FilmeRepository : IFilmeRepository
                             WHERE f.id = @Id";
             using var con = new SqlConnection(connectionString);
 
-            return await con.QueryFirstOrDefaultAsync<FilmeResponse>(sql, new { Id = id }) ??
-                throw new Exception("Filme não existe.");
+            return await con.QueryFirstOrDefaultAsync<FilmeResponse>(sql, new { Id = id }) ?? throw new Exception("Filme não encontrado.");
         }
         catch (Exception)
         {
@@ -105,15 +107,18 @@ public class FilmeRepository : IFilmeRepository
         }
     }
 
-    public async Task<bool> DeletarFilmeAsync(int id)
+    public async Task<string> DeletarFilmeAsync(int id)
     {
         try
         {
-            string sql = @"DELETE FROM dbo.Filmes WHERE f.id = @Id";
+            if (id <= 0) throw new Exception("Filme inválido.");
+            FilmeResponse filme = await BuscaFilmeAsync(id);
+
+            string sql = @"DELETE FROM dbo.Filmes WHERE id = @Id";
             using var con = new SqlConnection(connectionString);
 
-            return await con.ExecuteAsync(sql, new { Id = id }) <= 0 ?
-                throw new Exception("Erro ao deletar filme.") : true;
+            return await con.ExecuteAsync(sql, new { Id = filme.Id }) <= 0 ?
+                throw new Exception("Erro ao deletar filme.") : "deletado com sucesso";
         }
         catch (Exception)
         {

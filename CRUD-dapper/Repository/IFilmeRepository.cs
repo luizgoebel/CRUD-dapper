@@ -6,7 +6,7 @@ public interface IFilmeRepository
 {
     Task<IEnumerable<FilmeResponse>> BuscaFilmesAsync();
     Task<FilmeResponse> BuscaFilmeAsync(int id);
-    Task<bool> AdicionarAsync(FilmeRequest request);
-    Task<bool> AtualizarAsync(FilmeRequest request, int id);
-    Task<bool> DeletarFilmeAsync(int id);
+    Task<string> AdicionarAsync(FilmeRequest request);
+    Task<string> AtualizarAsync(FilmeRequest request, int id);
+    Task<string> DeletarFilmeAsync(int id);
 }

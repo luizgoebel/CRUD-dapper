@@ -25,11 +25,11 @@ public class FilmesController : ControllerBase
     {
         try
         {
-            return Ok(_filmeRepository.BuscaFilmeAsync(id));
+            return Ok(await _filmeRepository.BuscaFilmeAsync(id));
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            throw;
+            return BadRequest(ex.Message);
         }
     }
     [HttpPost]
@@ -49,9 +49,6 @@ public class FilmesController : ControllerBase
     {
         try
         {
-            FilmeResponse filme = await _filmeRepository.BuscaFilmeAsync(id);
-            request.Atualizar(filme);
-
             return Ok(await _filmeRepository.AtualizarAsync(request, id));
         }
         catch (Exception ex)
@@ -64,8 +61,6 @@ public class FilmesController : ControllerBase
     {
         try
         {
-            FilmeResponse filme = await _filmeRepository.BuscaFilmeAsync(id);
-
             return Ok(await _filmeRepository.DeletarFilmeAsync(id));
         }
         catch (Exception ex)
